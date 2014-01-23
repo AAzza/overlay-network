@@ -7,7 +7,7 @@ import random
 
 import argparse
 
-from node import Node, FastNode, Seed, MiddleNode
+from node import Node, SequenceNode, Seed, RandomNode
 from statistics import process_stats, normalize, save_stats, calc_average
 
 
@@ -42,11 +42,18 @@ def random_graph(total_nodes, total_connections, node_creator=Node, options=None
     return graph
 
 
-def simple_graph():
-    seed = Seed(0)
-    node1 = Node(1)
-    node2 = FastNode(2)
-    node3 = Node(3)
+NODES_TYPES = {
+    'random': RandomNode,
+    'seq': SequenceNode,
+}
+
+
+def simple_graph(seed_options=None):
+    seed_options = seed_options or {}
+    seed = Seed(0 **seed_options)
+    node1 = RandomNode(1)
+    node2 = SequenceNode(2)
+    node3 = RandomNode(3)
     node1.peers = {0: seed, 3: node3}
     node2.peers = {0: seed, 3: node3}
     node3.peers = {1: node1, 2: node2}
@@ -63,11 +70,18 @@ def compare2first(stats):
     return new_stats
 
 
-def main(name, nodes, blocks, graph='random'):
-    # graph = simple_graph()
-    total_connections =  int(math.log(nodes, 2)) / 2 + 1
-    graph = random_graph(nodes, total_connections, node_creator=MiddleNode, options=dict(block_count=blocks))
+def main(name, nodes, blocks, graph_type='random'):
+    seed_options = dict(block_count=blocks)
+    if graph_type == 'simple':
+        graph = simple_graph(seed_options)
+    else:
+        total_connections =  int(math.log(nodes, 2)) / 2 + 1
+        node_creator = NODES_TYPES[graph_type]
+        graph = random_graph(nodes, total_connections,
+                             node_creator=node_creator,
+                             options=seed_options)
     log.info(graph)
+
     start_time = time.time()
     threads = [(node.id, node.run()) for node in graph]
     stats = {}
@@ -84,7 +98,6 @@ def main(name, nodes, blocks, graph='random'):
     stats = normalize(stats, ['blocks_timeout'])
     stats['blocks_timeout_sub'] = compare2first(stats['blocks_timeout'])
     stats['delay_sub'] = compare2first(stats['delay'])
-    # pprint.pprint(stats)
     print '-----------------'
     print calc_average(stats['delay_sub'])
     print calc_average(stats['blocks_timeout_sub'])
@@ -105,7 +118,7 @@ if __name__ == '__main__':
                         action='store',
                         type=int,
                         default=20)
-    parser.add_argument('--graph', '-g',
+    parser.add_argument('--graph_type', '-g',
                         action='store',
                         type=str,
                         default='random',

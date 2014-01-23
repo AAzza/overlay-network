@@ -164,8 +164,6 @@ class Seed(BaseNode):
 
 
 class Node(BaseNode):
-    # INPUT_SPEED = 10
-
     def __init__(self, *args, **kwargs):
         super(Node, self).__init__(*args, **kwargs)
         self.want_them = []
@@ -179,7 +177,7 @@ class Node(BaseNode):
         super(Node, self)._after_sending(sender_id, block_id)
 
     def _priority_blocks_to_request(self):
-        return random.sample(self.want_them, len(self.want_them))
+        raise NotImplementedError("You should define the block selection algorithm in child")
 
     def _try_to_request(self):
         log.debug("%s: peers_info - %s" % (self, self.peers_info))
@@ -195,15 +193,11 @@ class Node(BaseNode):
                     return
 
 
-class FastNode(Node):
-    # INPUT_SPEED = 10
-
+class SequenceNode(Node):
     def _priority_blocks_to_request(self):
         return sorted(self.want_them)
 
 
-class MiddleNode(Node):
-    # INPUT_SPEED = 10
-
+class RandomNode(Node):
     def _priority_blocks_to_request(self):
-        return sorted(self.want_them)
+        return random.sample(self.want_them, len(self.want_them))
