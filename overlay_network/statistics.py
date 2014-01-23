@@ -2,10 +2,7 @@ from __future__ import division
 
 import pycha
 import pycha.line
-try:
-    import cairo
-except ImportError:
-    import cairocffi as cairo
+import cairo
 import os
 
 

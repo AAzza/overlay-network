@@ -3,4 +3,3 @@ enum
 eventlet
 pycha
 nose
-consoleargs

@@ -5,7 +5,7 @@ import time
 import copy
 import random
 
-from consoleargs import command
+import argparse
 
 from node import Node, FastNode, Seed, MiddleNode
 from statistics import process_stats, normalize, save_stats, calc_average
@@ -63,11 +63,10 @@ def compare2first(stats):
     return new_stats
 
 
-@command
-def main(count=5, block_count=20):
+def main(name, nodes, blocks, graph='random'):
     # graph = simple_graph()
-    total_connections =  int(math.log(count, 2)) / 2 + 1
-    graph = random_graph(count, total_connections, node_creator=MiddleNode, options=dict(block_count=block_count))
+    total_connections =  int(math.log(nodes, 2)) / 2 + 1
+    graph = random_graph(nodes, total_connections, node_creator=MiddleNode, options=dict(block_count=blocks))
     log.info(graph)
     start_time = time.time()
     threads = [(node.id, node.run()) for node in graph]
@@ -95,11 +94,28 @@ def main(count=5, block_count=20):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="A program for overlay-network simulation")
+    parser.add_argument('name',
+                        action='store')
+    parser.add_argument('--nodes', '-n',
+                        action='store',
+                        type=int,
+                        default=5)
+    parser.add_argument('--blocks', '-b',
+                        action='store',
+                        type=int,
+                        default=20)
+    parser.add_argument('--graph', '-g',
+                        action='store',
+                        type=str,
+                        default='random',
+                        choices=['random', 'sample', 'seq'])
+    args = parser.parse_args()
+
     logging.basicConfig()
     root_logger = logging.getLogger("")
     root_logger.setLevel(logging.INFO)
-    file_handler = logging.FileHandler(os.path.join('log', str(int(time.time()))))
+    file_handler = logging.FileHandler(os.path.join('log', args.name+'.log'))
     root_logger.addHandler(file_handler)
 
-    main()
-
+    main(**vars(args))
