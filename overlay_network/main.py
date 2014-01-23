@@ -1,15 +1,15 @@
 import logging
-import pprint
 import math
 import os
 import time
 import copy
-
 import random
+
 from consoleargs import command
 
 from node import Node, FastNode, Seed, MiddleNode
 from statistics import process_stats, normalize, save_stats, calc_average
+
 
 log = logging.getLogger(__name__)
 
@@ -20,11 +20,11 @@ log = logging.getLogger(__name__)
 # class Seed(Node):
 #     pass
 
-def random_graph(total_nodes, total_connections, node_creator=Node, options={}):
+def random_graph(total_nodes, total_connections, node_creator=Node, options=None):
+    options = options or {}
     graph = [node_creator(i) for i in xrange(1, total_nodes)]
     graph = [Seed(0, **options)] + graph
     connections = [[] for _ in xrange(total_nodes)]
-    # import pdb; pdb.set_trace()
     nodes = graph[:]
     for i in xrange(total_connections):
         random.shuffle(nodes)
@@ -66,7 +66,8 @@ def compare2first(stats):
 @command
 def main(count=5, block_count=20):
     # graph = simple_graph()
-    graph = random_graph(count, int(math.log(count, 2)) / 2 + 1, node_creator=MiddleNode, options=dict(block_count=block_count))
+    total_connections =  int(math.log(count, 2)) / 2 + 1
+    graph = random_graph(count, total_connections, node_creator=MiddleNode, options=dict(block_count=block_count))
     log.info(graph)
     start_time = time.time()
     threads = [(node.id, node.run()) for node in graph]

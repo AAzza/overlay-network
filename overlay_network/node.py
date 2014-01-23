@@ -10,16 +10,14 @@ from eventlet.queue import Queue, PriorityQueue
 
 from message import Message, MessageType
 
+
 log = logging.getLogger(__name__)
 
 
 class BaseNode(object):
-
     SIZE = 1024
     INPUT_SPEED = 512
     OUTPUT_SPEED = 512
-    # INPUT_SPEED = 10
-    # OUTPUT_SPEED = 15
     BUFFER_SIZE = 10
     BITRATE = 256
 
@@ -143,7 +141,6 @@ class BaseNode(object):
 
 
 class Seed(BaseNode):
-
     OUTPUT_SPEED = 1024
 
     def __init__(self,  *args, **kwargs):
@@ -181,9 +178,12 @@ class Node(BaseNode):
     def _after_sending(self, sender_id, block_id):
         super(Node, self)._after_sending(sender_id, block_id)
 
+    def _priority_blocks_to_request(self):
+        return random.sample(self.want_them, len(self.want_them))
+
     def _try_to_request(self):
         log.debug("%s: peers_info - %s" % (self, self.peers_info))
-        shuffled_blocks = random.sample(self.want_them, len(self.want_them))
+        shuffled_blocks = self._priority_blocks_to_request()
         shuffled_peers = random.sample(self.available_peers, len(self.available_peers))
         for block_id in shuffled_blocks:
             for peer_id in shuffled_peers:
@@ -198,31 +198,12 @@ class Node(BaseNode):
 class FastNode(Node):
     # INPUT_SPEED = 10
 
-    def _try_to_request(self):
-        log.debug("%s: peers_info - %s" % (self, self.peers_info))
-        shuffled_blocks = sorted(self.want_them)
-        shuffled_peers = random.sample(self.available_peers, len(self.available_peers))
-        for block_id in shuffled_blocks:
-            for peer_id in shuffled_peers:
-                if block_id in self.peers_info[peer_id]:
-                    self.want_them.remove(block_id)
-                    self.available_peers.remove(peer_id)
-                    log.info("%s: sending request to %d" % (self, peer_id))
-                    self.peers[peer_id].main_channel.put(Message(MessageType.request, self.id, block_id))
-                    return
+    def _priority_blocks_to_request(self):
+        return sorted(self.want_them)
+
 
 class MiddleNode(Node):
     # INPUT_SPEED = 10
 
-    def _try_to_request(self):
-        log.debug("%s: peers_info - %s" % (self, self.peers_info))
-        shuffled_blocks = sorted(self.want_them)
-        shuffled_peers = random.sample(self.available_peers, len(self.available_peers))
-        for peer_id in shuffled_peers:
-            for block_id in shuffled_blocks:
-                if block_id in self.peers_info[peer_id]:
-                    self.want_them.remove(block_id)
-                    self.available_peers.remove(peer_id)
-                    log.info("%s: sending request to %d" % (self, peer_id))
-                    self.peers[peer_id].main_channel.put(Message(MessageType.request, self.id, block_id))
-                    return
+    def _priority_blocks_to_request(self):
+        return sorted(self.want_them)
