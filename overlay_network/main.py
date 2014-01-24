@@ -1,26 +1,20 @@
-import logging
-import math
 import os
+import math
 import time
 import copy
 import random
-
+import logging
 import argparse
 
-from node import Node, SequenceNode, Seed, RandomNode
+from node import SequenceNode, Seed, RandomNode
 from statistics import process_stats, normalize, save_stats, calc_average
+from statistics import compare2first
 
 
 log = logging.getLogger(__name__)
 
-# class Node(object):
-#     def __init__(self, id_):
-#         self.id = id_
-#
-# class Seed(Node):
-#     pass
 
-def random_graph(total_nodes, total_connections, node_creator=Node, options=None):
+def random_graph(total_nodes, total_connections, node_creator=RandomNode, options=None):
     options = options or {}
     graph = [node_creator(i) for i in xrange(1, total_nodes)]
     graph = [Seed(0, **options)] + graph
@@ -61,15 +55,6 @@ def simple_graph(seed_options=None):
     return (seed, node1, node2, node3)
 
 
-def compare2first(stats):
-    new_stats = {}
-    for key, value in stats.iteritems():
-        new_stats[key] = {}
-        for inner_key, inner_value in value.iteritems():
-            new_stats[key][inner_key] = inner_value - stats[0][inner_key]
-    return new_stats
-
-
 def main(name, nodes, blocks, graph_type='random'):
     seed_options = dict(block_count=blocks)
     if graph_type == 'simple':
@@ -99,11 +84,15 @@ def main(name, nodes, blocks, graph_type='random'):
     stats['blocks_timeout_sub'] = compare2first(stats['blocks_timeout'])
     stats['delay_sub'] = compare2first(stats['delay'])
     print '-----------------'
-    print calc_average(stats['delay_sub'])
-    print calc_average(stats['blocks_timeout_sub'])
-    print stats['input_speed']
+    log.info("Average relative delay : %s", calc_average(stats['delay_sub']))
+    log.info("Average relative timeout: %s", calc_average(stats['blocks_timeout_sub']))
+    log.info("Input speed %s", stats['input_speed'])
     del stats['input_speed']
-    save_stats(stats)
+
+    stats_dir = os.path.join('out', name)
+    if not os.path.exists(stats_dir):
+        os.mkdir(stats_dir)
+    save_stats(stats, stats_dir)
 
 
 if __name__ == '__main__':

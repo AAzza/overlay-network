@@ -10,6 +10,15 @@ def timedelta2int(timedelta):
     return (timedelta.seconds * 10 ** 6 + timedelta.microseconds) / 10 ** 6
 
 
+def compare2first(stats):
+    new_stats = {}
+    for key, value in stats.iteritems():
+        new_stats[key] = {}
+        for inner_key, inner_value in value.iteritems():
+            new_stats[key][inner_key] = inner_value - stats[0][inner_key]
+    return new_stats
+
+
 def normalize_block(stats_block):
     if len(stats_block):
         first_value = sorted(stats_block.values())[0]
