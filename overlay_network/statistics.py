@@ -20,19 +20,14 @@ def compare2first(stats):
 
 
 def normalize_block(stats_block):
-    if len(stats_block):
-        first_value = sorted(stats_block.values())[0]
-        values = []
-        for key, value in stats_block.iteritems():
-            value -= first_value
-            # value = timedelta2int(value)
-            values.append((key, value))
-        return dict(values)
+    if not stats_block:
+        return {}
+    first_value = min(stats_block.values())
+    values = {key: value - first_value for (key, value) in stats_block.items()}
+    return values
 
 
-def process_stats(stats, to_normalize=None):
-    to_normalize = to_normalize or []
-
+def to_dict(stats):
     new_stats = {}
     for peer_id, peer_stats in stats.iteritems():
         for key, values in peer_stats.iteritems():
@@ -40,23 +35,24 @@ def process_stats(stats, to_normalize=None):
     return new_stats
 
 
-def normalize(stats, to_normalize):
+def normalize(stats, keys):
     new_stats = stats.copy()
-    for stats_name in to_normalize:
-        stats_block = new_stats[stats_name]
+    for key in keys:
+        stats_block = new_stats[key]
         for peer_id, values in stats_block.iteritems():
             stats_block[peer_id] = normalize_block(values)
-
     return new_stats
 
 
-def calc_average(stats):
+def average(stats):
+    """ Compute the average of all values for the next structure:
+        {peer1: {block1: value11, block2: value2}, peer2: {...}, ...}
+    """
     total = 0
     count = 0
     for peer_stats in stats.itervalues():
-        for value in peer_stats.itervalues():
-            total += value
-            count += 1
+        total += sum(peer_stats.itervalues())
+        count += len(peer_stats)
     return total / count
 
 

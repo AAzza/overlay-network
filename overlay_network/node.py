@@ -31,8 +31,10 @@ class BaseNode(object):
         self.sending_queue = Queue()
         self.receiving_queue = Queue()
         self.buffer = {}
-        self.stats = {}
+        # for stats
+        self.sent_bytes = 0
         self.received_bytes = 0
+        self.delays = {}
 
     def __repr__(self):
         return "Node(id=%d, peers=%s)" % (self.id, self.peers_info.keys())
@@ -75,9 +77,14 @@ class BaseNode(object):
             self._try_to_request()
             eventlet.sleep(0)
             log.debug("%s: available peers - %s" % (self, self.available_peers))
-        end_time = time.time()
-        self.stats['input_speed'] = self.received_bytes / (end_time - start_time)
-        return self.stats
+        transmission_time = time.time() - start_time
+
+        stats = {
+            'input_load': self.received_bytes / transmission_time / self.INPUT_SPEED,
+            'output_load': self.sent_bytes / transmission_time / self.OUTPUT_SPEED,
+            'delays': self.delays,
+        }
+        return stats
 
     def _sending(self, queue, back_queue):
         while True:
@@ -92,6 +99,7 @@ class BaseNode(object):
             if part < self.SIZE - 1:
                 queue.put((block_id, receiver_id, part + 1))
             else:
+                self.sent_bytes += self.SIZE
                 back_queue.put(Message(MessageType.done_sending, receiver_id, block_id))
             eventlet.sleep(1/self.OUTPUT_SPEED)
 
@@ -99,8 +107,8 @@ class BaseNode(object):
         while True:
             block_id, sender_id, part = self.data_channel.get()
             # log.debug("%s: Get %d/%d of %d to %d" % (self, part+1, self.SIZE, block_id, sender_id))
-            self.received_bytes += self.SIZE
             if part == self.SIZE - 1:
+                self.received_bytes += self.SIZE
                 back_queue.put(Message(MessageType.done_receiving, sender_id, block_id, block_id))
             eventlet.sleep(1/self.INPUT_SPEED)
 
@@ -111,8 +119,7 @@ class BaseNode(object):
         self.buffer[block_id] = block
         if sender_id != self.id:
             self.available_peers.append(sender_id)
-        blocks_stats = self.stats.setdefault('blocks_timeout', {})
-        blocks_stats[block_id] = time.time()
+        self.delays[block_id] = time.time()
         self._broadcast(block_id, MessageType.notify)
 
     def _do_receive_notify(self, sender_id, block_id):

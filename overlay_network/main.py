@@ -7,7 +7,7 @@ import logging
 import argparse
 
 from node import SequenceNode, Seed, RandomNode
-from statistics import process_stats, normalize, save_stats, calc_average
+from statistics import to_dict, normalize, save_stats, average
 from statistics import compare2first
 
 
@@ -60,7 +60,7 @@ def main(name, nodes, blocks, graph_type='random'):
     if graph_type == 'simple':
         graph = simple_graph(seed_options)
     else:
-        total_connections =  int(math.log(nodes, 2)) / 2 + 1
+        total_connections =  int(math.log(nodes, 2)) / 2 + 1 # wtf - why?
         node_creator = NODES_TYPES[graph_type]
         graph = random_graph(nodes, total_connections,
                              node_creator=node_creator,
@@ -72,22 +72,23 @@ def main(name, nodes, blocks, graph_type='random'):
     stats = {}
     for node_id, thread in threads:
         stats[node_id] = thread.wait()
+    stats = to_dict(stats)
 
-    stats = process_stats(stats)
-
-    stats['delay'] = copy.deepcopy(stats['blocks_timeout'])
-    for key, value in stats['delay'].iteritems():
+    stats['delays_abs'] = copy.deepcopy(stats['delays'])
+    for key, value in stats['delays_abs'].iteritems():
         for inner_key, inner_value in value.iteritems():
             value[inner_key] -= start_time
 
-    stats = normalize(stats, ['blocks_timeout'])
-    stats['blocks_timeout_sub'] = compare2first(stats['blocks_timeout'])
-    stats['delay_sub'] = compare2first(stats['delay'])
+    stats = normalize(stats, ['delays'])
+    stats['delays_sub'] = compare2first(stats['delays'])
+    stats['delays_abs_sub'] = compare2first(stats['delays_abs'])
     print '-----------------'
-    log.info("Average relative delay : %s", calc_average(stats['delay_sub']))
-    log.info("Average relative timeout: %s", calc_average(stats['blocks_timeout_sub']))
-    log.info("Input speed %s", stats['input_speed'])
-    del stats['input_speed']
+    log.info("Average relative delay : %s", average(stats['delays_sub']))
+    log.info("Average relative timeout: %s", average(stats['delays_abs_sub']))
+    log.info("Input speed %s", stats['input_load'])
+    log.info("Output speed %s", stats['output_load'])
+    del stats['input_load']
+    del stats['output_load']
 
     stats_dir = os.path.join('out', name)
     if not os.path.exists(stats_dir):
