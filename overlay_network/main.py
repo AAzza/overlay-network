@@ -6,7 +6,7 @@ import random
 import logging
 import argparse
 
-from node import SequenceNode, Seed, RandomNode
+from node import SequenceNode, Seed, RandomNode, BetaVariateNode
 from statistics import to_dict, normalize, save_stats, average
 from statistics import compare2first
 
@@ -39,6 +39,7 @@ def random_graph(total_nodes, total_connections, node_creator=RandomNode, option
 NODES_TYPES = {
     'random': RandomNode,
     'seq': SequenceNode,
+    'beta': BetaVariateNode,
 }
 
 
@@ -81,10 +82,10 @@ def main(name, nodes, blocks, graph_type='random'):
 
     stats = normalize(stats, ['delays'])
     stats['delays_sub'] = compare2first(stats['delays'])
-    stats['delays_abs_sub'] = compare2first(stats['delays_abs'])
+    # stats['delays_abs_sub'] = compare2first(stats['delays_abs'])
     print '-----------------'
     log.info("Average relative delay : %s", average(stats['delays_sub']))
-    log.info("Average relative timeout: %s", average(stats['delays_abs_sub']))
+    # log.info("Average relative timeout: %s", average(stats['delays_abs_sub']))
     log.info("Input speed %s", stats['input_load'])
     log.info("Output speed %s", stats['output_load'])
     del stats['input_load']
@@ -112,7 +113,7 @@ if __name__ == '__main__':
                         action='store',
                         type=str,
                         default='random',
-                        choices=['random', 'sample', 'seq'])
+                        choices=['sample'] + NODES_TYPES.keys())
     args = parser.parse_args()
 
     logging.basicConfig()

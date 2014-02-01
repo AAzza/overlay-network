@@ -177,6 +177,7 @@ class Node(BaseNode):
 
     def _do_receive_notify(self, sender_id, block_id):
         self.peers_info[sender_id].append(block_id)
+        # if the block is currently receiving, what should be do?
         if block_id not in self.want_them and block_id not in self.buffer.keys():
             self.want_them.append(block_id)
 
@@ -208,3 +209,15 @@ class SequenceNode(Node):
 class RandomNode(Node):
     def _priority_blocks_to_request(self):
         return random.sample(self.want_them, len(self.want_them))
+
+
+class BetaVariateNode(Node):
+    a = 1
+    b = 3
+
+    def _priority_blocks_to_request(self):
+        blocks = self.want_them[:]
+        while blocks:
+            next_pos = int(len(blocks) * random.betavariate(self.a, self.b))
+            yield blocks[next_pos]
+            del blocks[next_pos]
