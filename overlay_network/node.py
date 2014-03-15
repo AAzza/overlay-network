@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 class BaseNode(object):
-    SIZE = 1024
+    SIZE = 256
     INPUT_SPEED = 512
     OUTPUT_SPEED = 512
     BUFFER_SIZE = 10
@@ -80,8 +80,8 @@ class BaseNode(object):
         transmission_time = time.time() - start_time
 
         stats = {
-            'input_load': self.received_bytes / transmission_time / self.INPUT_SPEED,
-            'output_load': self.sent_bytes / transmission_time / self.OUTPUT_SPEED,
+            'input_load': round(self.received_bytes / transmission_time / self.INPUT_SPEED, 4),
+            'output_load': round(self.sent_bytes / transmission_time / self.OUTPUT_SPEED, 4),
             'delays': self.delays,
         }
         return stats
