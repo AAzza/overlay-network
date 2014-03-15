@@ -1,5 +1,7 @@
 from __future__ import division
 
+import json
+
 import pycha
 import pycha.line
 import cairo
@@ -59,11 +61,13 @@ def average(stats):
 def save_stats_to_image(surface, stats):
     options = {
         'axis': {
+            'labelFontSize': 12,
             'x':{
                 'showLines': True,
             },
             'y':{
                 'showLines': True,
+                'range': [0, 100],
             }
         },
         'background': {
@@ -91,6 +95,8 @@ def save_stats_to_image(surface, stats):
 
 def save_stats(stats, outdir='out'):
     for stat_name, stats_values in stats.iteritems():
-        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 1024, 768)
+        with open(os.path.join(outdir, '%s.json' % stat_name), 'w') as out:
+            json.dump(stats_values, out, sort_keys=True)
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 800, 600)
         save_stats_to_image(surface, stats_values)
         surface.write_to_png(os.path.join(outdir, '%s.png' % stat_name))
