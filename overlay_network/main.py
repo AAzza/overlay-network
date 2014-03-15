@@ -6,13 +6,14 @@ import random
 import logging
 import argparse
 
-from node import SequenceNode, Seed, RandomNode, BetaVariateNode
+from node import SequenceNode, Seed, RandomNode, BetaVariateNode, PriorityNode
 from statistics import to_dict, normalize, save_stats, average
 from statistics import compare2first
 
 
 log = logging.getLogger(__name__)
 
+random = random.Random()
 
 def random_graph(total_nodes, total_connections, node_creator=RandomNode, options=None):
     options = options or {}
@@ -40,6 +41,7 @@ NODES_TYPES = {
     'random': RandomNode,
     'seq': SequenceNode,
     'beta': BetaVariateNode,
+    'priority': PriorityNode,
 }
 
 

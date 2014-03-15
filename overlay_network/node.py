@@ -221,3 +221,22 @@ class BetaVariateNode(Node):
             next_pos = int(len(blocks) * random.betavariate(self.a, self.b))
             yield blocks[next_pos]
             del blocks[next_pos]
+
+
+class PriorityNode(Node):
+
+    def _priority_blocks_to_request(self):
+        blocks = self.want_them[:]
+        if self.delays.get(0) is None:
+            random.shuffle(blocks)
+            return blocks
+
+        start = self.delays.get(0)
+        block_id = (time.time() - start) + 3 # current plus extra in future
+        print block_id
+        priority = [x for x in blocks if x <= block_id ]
+        nopriority = [x for x in blocks if x > block_id ]
+        random.shuffle(nopriority)
+        assert len(priority + nopriority) == len(blocks)
+        return priority + nopriority
+
